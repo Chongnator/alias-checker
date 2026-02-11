@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Domain Validator - Snorkel AI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e7;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #a1a1aa;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .card h2 {
+            font-size: 1rem;
+            color: #a1a1aa;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            color: #e4e4e7;
+            font-family: monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+        textarea:focus { outline: none; border-color: #6366f1; }
+        .file-drop {
+            border: 2px dashed rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .file-drop:hover, .file-drop.dragover {
+            border-color: #6366f1;
+            background: rgba(99,102,241,0.1);
+        }
+        .file-drop input { display: none; }
+        .btn {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .results { margin-top: 1.5rem; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .stat {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: bold; }
+        .stat-label { font-size: 0.75rem; color: #a1a1aa; margin-top: 0.25rem; }
+        .stat.valid .stat-value { color: #4ade80; }
+        .stat.invalid .stat-value { color: #f87171; }
+        .email-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+        .email-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .email-item:nth-child(odd) { background: rgba(255,255,255,0.02); }
+        .email-item.valid .status { color: #4ade80; }
+        .email-item.invalid .status { color: #f87171; }
+        .hidden { display: none; }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .tab {
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            cursor: pointer;
+            color: #a1a1aa;
+            font-size: 0.9rem;
+        }
+        .tab.active {
+            background: rgba(99,102,241,0.2);
+            border-color: #6366f1;
+            color: #e4e4e7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Email Domain Validator</h1>
+        <p class="subtitle">Verify emails belong to @snorkelai.ai</p>
+
+        <div class="card">
+            <div class="tabs">
+                <div class="tab active" data-tab="paste">Paste Emails</div>
+                <div class="tab" data-tab="csv">Upload CSV</div>
+            </div>
+
+            <div id="paste-section">
+                <textarea id="email-input" placeholder="Paste emails here, one per line or comma-separated...&#10;&#10;example@snorkelai.ai&#10;john@snorkelai.ai, jane@other.com"></textarea>
+            </div>
+
+            <div id="csv-section" class="hidden">
+                <div class="file-drop" id="file-drop">
+                    <p>📄 Drop CSV file here or click to browse</p>
+                    <p style="font-size:0.8rem;color:#71717a;margin-top:0.5rem">Expects a column with email addresses</p>
+                    <input type="file" id="file-input" accept=".csv">
+                </div>
+            </div>
+
+            <button class="btn" id="validate-btn">Validate Emails</button>
+        </div>
+
+        <div class="card results hidden" id="results">
+            <h2>Results</h2>
+            <div class="stats">
+                <div class="stat"><div class="stat-value" id="total-count">0</div><div class="stat-label">Total</div></div>
+                <div class="stat valid"><div class="stat-value" id="valid-count">0</div><div class="stat-label">Valid</div></div>
+                <div class="stat invalid"><div class="stat-value" id="invalid-count">0</div><div class="stat-label">Invalid</div></div>
+            </div>
+            <div class="email-list" id="email-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const VALID_DOMAIN = '@snorkelai.ai';
+        let emails = [];
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const isCSV = tab.dataset.tab === 'csv';
+                document.getElementById('paste-section').classList.toggle('hidden', isCSV);
+                document.getElementById('csv-section').classList.toggle('hidden', !isCSV);
+            });
+        });
+
+        // File handling
+        const fileDrop = document.getElementById('file-drop');
+        const fileInput = document.getElementById('file-input');
+
+        fileDrop.addEventListener('click', () => fileInput.click());
+        fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
+        fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
+        fileDrop.addEventListener('drop', e => {
+            e.preventDefault();
+            fileDrop.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                emails = extractEmailsFromCSV(e.target.result);
+                fileDrop.innerHTML = `<p>✅ Loaded ${emails.length} emails from ${file.name}</p>`;
+            };
+            reader.readAsText(file);
+        }
+
+        function extractEmailsFromCSV(text) {
+            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            const found = text.match(emailRegex) || [];
+            return [...new Set(found)];
+        }
+
+        function extractEmailsFromText(text) {
+            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            const found = text.match(emailRegex) || [];
+            return [...new Set(found)];
+        }
+
+        function validateEmail(email) {
+            return email.toLowerCase().endsWith(VALID_DOMAIN.toLowerCase());
+        }
+
+        document.getElementById('validate-btn').addEventListener('click', () => {
+            const activeTab = document.querySelector('.tab.active').dataset.tab;
+            let emailsToValidate = [];
+
+            if (activeTab === 'paste') {
+                emailsToValidate = extractEmailsFromText(document.getElementById('email-input').value);
+            } else {
+                emailsToValidate = emails;
+            }
+
+            if (emailsToValidate.length === 0) {
+                alert('No valid email addresses found!');
+                return;
+            }
+
+            const results = emailsToValidate.map(e => ({ email: e, valid: validateEmail(e) }));
+            const validCount = results.filter(r => r.valid).length;
+            const invalidCount = results.length - validCount;
+
+            document.getElementById('total-count').textContent = results.length;
+            document.getElementById('valid-count').textContent = validCount;
+            document.getElementById('invalid-count').textContent = invalidCount;
+
+            const listEl = document.getElementById('email-list');
+            listEl.innerHTML = results.map(r => `
+                <div class="email-item ${r.valid ? 'valid' : 'invalid'}">
+                    <span>${r.email}</span>
+                    <span class="status">${r.valid ? '✓ Valid' : '✗ Invalid'}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('results').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
